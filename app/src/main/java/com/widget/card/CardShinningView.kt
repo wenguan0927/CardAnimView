@@ -1,5 +1,6 @@
 package com.widget.card
 
+import android.animation.Animator
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
@@ -13,7 +14,7 @@ class CardShinningView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) :
     View(context, attrs, defStyleAttr) {
-    private val mPaint = Paint()
+    private val mPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val mPath = Path()
     private var mValueAnimator: ValueAnimator? = null
     private var mRadius = 0
@@ -52,8 +53,12 @@ class CardShinningView @JvmOverloads constructor(
         a.recycle()
     }
 
-    fun playAnim() {
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         initData()
+    }
+
+    fun playAnim() {
         if (mValueAnimator != null && mValueAnimator?.isStarted == true) {
             mValueAnimator!!.cancel()
         }
@@ -72,35 +77,54 @@ class CardShinningView @JvmOverloads constructor(
             mOffset = measuredWidth
         }
 
-        if(mValueAnimator == null){
-            mValueAnimator =
-                ValueAnimator.ofFloat(-mOffset.toFloat(), measuredWidth.toFloat() + mOffset)
-            mValueAnimator?.setRepeatCount(mRepeatCount)
-            mValueAnimator?.setInterpolator(LinearInterpolator())
-            mValueAnimator?.setDuration(mDuration)
-            mValueAnimator?.addUpdateListener({ animation: ValueAnimator ->
-                val value = animation.animatedValue as Float
-                val mLinearGradient = LinearGradient(
-                    value,
-                    mSlope * value,
-                    value + mOffset,
-                    mSlope * (value + mOffset),
-                    mColors,
-                    mPositions,
-                    Shader.TileMode.CLAMP
-                )
-                mPaint.shader = mLinearGradient
-                invalidate()
-            })
-        }
+        mValueAnimator =
+            ValueAnimator.ofFloat(-mOffset.toFloat(), measuredWidth.toFloat() + mOffset)
+        mValueAnimator?.setRepeatCount(mRepeatCount)
+        mValueAnimator?.setInterpolator(LinearInterpolator())
+        mValueAnimator?.setDuration(mDuration)
+        mValueAnimator?.addUpdateListener({ animation: ValueAnimator ->
+            val value = animation.animatedValue as Float
+            val mLinearGradient = LinearGradient(
+                value,
+                mSlope * value,
+                value + mOffset,
+                mSlope * (value + mOffset),
+                mColors,
+                mPositions,
+                Shader.TileMode.CLAMP
+            )
+            mPaint.shader = mLinearGradient
+            invalidate()
+        })
+
+        mValueAnimator?.addListener(object : Animator.AnimatorListener {
+            override fun onAnimationStart(p0: Animator) {
+                visibility = VISIBLE
+            }
+
+            override fun onAnimationEnd(p0: Animator) {
+                visibility = INVISIBLE
+            }
+
+            override fun onAnimationCancel(p0: Animator) {
+
+            }
+
+            override fun onAnimationRepeat(p0: Animator) {
+
+            }
+        })
+
     }
 
     public override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-//        mClipPath.reset()
-//        mRect[0f, 0f, measuredWidth.toFloat()] = measuredHeight.toFloat()
-//        mClipPath.addRoundRect(mRect, mRadius.toFloat(), mRadius.toFloat(), Path.Direction.CW)
-//        canvas.clipPath(mClipPath)
+        // 不需要限制显示范围以下内容可注释 --start
+        mClipPath.reset()
+        mRect[0f, 0f, measuredWidth.toFloat()] = measuredHeight.toFloat()
+        mClipPath.addRoundRect(mRect, mRadius.toFloat(), mRadius.toFloat(), Path.Direction.CW)
+        canvas.clipPath(mClipPath)
+        // --end
         canvas.drawPath(mPath, mPaint)
     }
 
