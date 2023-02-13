@@ -114,7 +114,7 @@ class CardShinningView @JvmOverloads constructor(
 
             }
         })
-
+        visibility = INVISIBLE
     }
 
     public override fun onDraw(canvas: Canvas) {
